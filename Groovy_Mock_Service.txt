@@ -1,0 +1,19 @@
+import com.eviware.soapui.support.GroovyUtils
+
+//1.从请求的xml里读employee name
+
+//创建GroovyUtils对象
+def groovyUtils = new GroovyUtils(context);
+
+//读request xml
+def requestMessage = mockRequest.requestContent
+def requestXml = groovyUtils.getXmlHolder(requestMessage)
+
+//怎么从xml取到name呢
+def name = requestXml.getNodeValue('//typ:employeeName')
+
+log.info "name = $name"
+
+return "$name Response"
+
+//2.根据name返回响应的response xml
