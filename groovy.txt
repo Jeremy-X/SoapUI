@@ -1,0 +1,95 @@
+import com.eviware.soapui.support.XmlHolder
+import com.eviware.soapui.impl.wsdl.testcase.WsdlTestRunContext
+
+log.info "Hello, This is my first program"
+
+//context变量使用来访问和修改test case 的属性的
+//context变量作用域只能在测试用例中
+
+log.info context.expand('${#TestCase#name}')
+
+log.info context.expand('${#TestCase#age}')
+
+
+//访问任何属性，必须要先来到它的父级
+testRunner.testCase.testSuite.testCases['GetEmployee'].getPropertyValue("id")
+testRunner.testCase.testSuite.testCases['GetEmployee'].setPropertyValue("id","987")
+
+//Project -> Test Suite -> Test Case ->Test Step
+
+log.info testRunner.testCase.testSuite.testCases['AddEmployee'].getPropertyValue("age")
+
+log.info testRunner.testCase.getPropertyValue("dept")
+
+log.info testRunner.testCase.testSuite.testCases['GetEmployee'].testSteps['get'].getPropertyValue("Request")
+
+def project=testRunner.testCase.testSuite.project
+
+project.getPropertyValue("gender")
+
+//点击AddEmployee请求，用test case层级的属性
+def addReq = testRunner.testCase.testSuite.testCases["AddEmployee"].testSteps["AddEmployee"].getPropertyValue("Request")
+def name = testRunner.testCase.testSuite.testCases['AddEmployee'].getPropertyValue("name")
+def age = testRunner.testCase.testSuite.testCases['AddEmployee'].getPropertyValue("age")
+def id = testRunner.testCase.testSuite.testCases['AddEmployee'].getPropertyValue("id")
+
+def xmlAdd = new XmlHolder(addReq)
+
+xmlAdd.setNodeValue("//typ:addEmployee/typ:name",name)
+xmlAdd.setNodeValue("//typ:addEmployee/typ:id",id)
+xmlAdd.setNodeValue("//typ:addEmployee/typ:Department","QA")
+xmlAdd.setNodeValue("//typ:addEmployee/typ:age",age)
+
+def newAddXml = xmlAdd.getXml()
+
+testRunner.testCase.testSuite.testCases["AddEmployee"].testSteps["AddEmployee"].setPropertyValue("Request",newAddXml)
+
+//log.info newAddXml
+
+//调用服务
+//add employee的context传递到这里
+//因为要运行的add employee test step是在add employee test case里的
+
+def addTestStep = testRunner.testCase.testSuite.testCases["AddEmployee"].testSteps["AddEmployee"]
+def contextAddEmployee = new WsdlTestRunContext(addTestStep)
+
+addTestStep.run(testRunner,contextAddEmployee)
+
+//提交Get Employee请求，生成响应
+
+def getReq = testRunner.testCase.testSuite.testCases["GetEmployee"].testSteps["get"].getPropertyValue("Request")
+
+
+def getEmpxml = new XmlHolder(getReq)
+
+getEmpxml.setNodeValue("//typ:getEmployeeDetails/typ:employeeName",name)
+
+def newGetXml = getEmpxml.getXml()
+
+testRunner.testCase.testSuite.testCases["GetEmployee"].testSteps["get"].setPropertyValue("Request",newGetXml)
+
+def getTestStep = testRunner.testCase.testSuite.testCases["GetEmployee"].testSteps["get"]
+
+
+def contextGetEmployee = new WsdlTestRunContext(getTestStep)
+
+getTestStep.run(testRunner,contextGetEmployee)
+
+
+//验证结果
+
+
+def getRes = testRunner.testCase.testSuite.testCases["GetEmployee"].testSteps["get"].getPropertyValue("Response")
+def getEmpRes = new XmlHolder(getRes)
+
+def getResponse = getEmpRes.getNodeValue("//ns:name")
+
+log.info getResponse
+log.info name
+
+assert getResponse == name
+
+//提交Delete请求
+
+
+
