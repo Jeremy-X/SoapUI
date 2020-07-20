@@ -1,0 +1,26 @@
+//testcase名字
+log.info testRunner.testCase.name
+
+//testsuite名字
+log.info testRunner.testCase.testSuite.name
+
+//project名字
+log.info testRunner.testCase.testSuite.project.name
+
+//workspace名字
+log.info testRunner.testCase.testSuite.project.workspace.name
+
+//访问其他testsuite里的case
+log.info testRunner.testCase.testSuite.project.getTestSuiteByName('TestSuite 2').getTestCaseByName('TestCase 1').name
+
+//遍历project下的所有testsuite
+def testSuiteMap = testRunner.testCase.testSuite.project.testSuites 
+
+log.info 'testSuites size' + testRunner.testCase.testSuite.project.testSuites.size()
+//循环map打印testsuite名字
+testSuiteMap.each{
+	tsEntery->
+	log.info tsEntery.key
+	}
+
+log.info 'Done'
