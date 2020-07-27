@@ -1,0 +1,108 @@
+import com.eviware.soapui.support.XmlHolder
+import com.eviware.soapui.impl.wsdl.testcase.WsdlTestRunContext
+import groovy.sql.Sql
+
+//log.info  "hello world " + context.expand('${#TestCase#age}')
+//log.info testRunner.testCase.testSuite.testCases['TestCase 2'].getPropertyValue('Name')
+
+nameTemp = context.expand('${#TestCase#name}')
+
+def void mysqlQuery()
+{
+	def databaseUrl,username,password,driverName
+	databaseUrl = 'jdbc:mysql://localhost:3306/Employeeportal?user=&password=&serverTimezone=UTC&useUnicode=true&characterEncoding=UTF-8'
+	username = 'root'
+	password = 'root'
+	driverName ='com.mysql.jdbc.Driver'
+	String sqlStmt = 'select * from Employeeinfo'
+	def sql = Sql.newInstance(databaseUrl,username,password,driverName)
+	def name,age,id,dept
+	sql.eachRow(sqlStmt)
+	{
+		row ->
+		name = row['name']
+		id = row['id']
+		age = row['age']
+		dept = row['dept']
+		log.info "name =$name,id =$id, age =$age,dept =$dept"
+	}
+}
+
+
+def void operation(String stepName, String nodeName, String nameValue)
+{
+
+	log.info nameValue
+	def stepXML = testRunner.testCase.testSuite.testCases['add TestCasse'].testSteps[stepName].getPropertyValue('Request')
+	
+	def xmlTmp = new XmlHolder(stepXML)
+	
+	xmlTmp.setNodeValue(nodeName, nameValue)
+	def xmlValue = xmlTmp.getXml()
+
+	log.info xmlValue
+	testRunner.testCase.testSuite.testCases['add TestCasse'].testSteps[stepName].setPropertyValue('Request', xmlValue)
+	teststepCurrent = testRunner.testCase.testSuite.testCases['add TestCasse'].testSteps[stepName]
+	def contextCurrent = new WsdlTestRunContext(teststepCurrent)
+	teststepCurrent.run(testRunner, contextCurrent)
+	
+	mysqlQuery()
+}
+
+
+def String getNodeValue(String stepName, String propertyName, String nodeName)
+{
+	def stepXML = testRunner.testCase.testSuite.testCases['add TestCasse'].testSteps[stepName].getPropertyValue(propertyName)	
+	def xmlTmp = new XmlHolder(stepXML)	
+	return xmlTmp.getNodeValue(nodeName)
+}
+
+
+operation('add', '//typ:addEmployee/typ:name', nameTemp)
+log.info getNodeValue('add', 'Response', '//ns:return')
+assert getNodeValue('add', 'Response', '//ns:return') == 'true'
+operation('get', '//typ:getEmployeeDetails/typ:employeeName', nameTemp)
+assert getNodeValue('get', 'Request', '//typ:getEmployeeDetails/typ:employeeName') == getNodeValue('get', 'Response', '//ns:getEmployeeDetailsResponse/ns:return/ns:name')
+operation('delete', '//typ:deleteEmployee/typ:employeeName', nameTemp)
+
+
+
+
+
+
+
+/*
+def stepXML = testRunner.testCase.testSuite.testCases['add TestCasse'].testSteps['add'].getPropertyValue('Request')
+//log.info temp
+
+def xmlTmp = new XmlHolder(stepXML)
+
+xmlTmp.setNodeValue('//typ:addEmployee/typ:name', nameTemp)
+def xmlValue = xmlTmp.getXml()
+testRunner.testCase.testSuite.testCases['add TestCasse'].testSteps['add'].setPropertyValue('Request', xmlValue)
+teststepCurrent = testRunner.testCase.testSuite.testCases['add TestCasse'].testSteps['add']
+def contextCurrent = new WsdlTestRunContext(teststepCurrent)
+teststepCurrent.run(testRunner, contextCurrent)
+
+////////////////////////////////////////////
+teststepCurrent = testRunner.testCase.testSuite.testCases['add TestCasse'].testSteps['get']
+stepXML = teststepCurrent.getPropertyValue('Request')
+xmlTmp = new XmlHolder(stepXML)
+xmlTmp.setNodeValue('//typ:getEmployeeDetails/typ:employeeName', nameTemp)
+xmlValue = xmlTmp.getXml()
+teststepCurrent.setPropertyValue('Request', xmlValue)
+
+contextCurrent = new WsdlTestRunContext(teststepCurrent)
+teststepCurrent.run(testRunner, contextCurrent)
+
+////////////////////////////////////////////
+teststepCurrent = testRunner.testCase.testSuite.testCases['add TestCasse'].testSteps['delete']
+stepXML = teststepCurrent.getPropertyValue('Request')
+xmlTmp = new XmlHolder(stepXML)
+xmlTmp.setNodeValue('//typ:deleteEmployee/typ:employeeName', nameTemp)
+xmlValue = xmlTmp.getXml()
+teststepCurrent.setPropertyValue('Request', xmlValue)
+
+contextCurrent = new WsdlTestRunContext(teststepCurrent)
+teststepCurrent.run(testRunner, contextCurrent)
+*/
